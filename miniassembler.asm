@@ -94,44 +94,49 @@ next:
 ;; '|', not implemented                                 1 byte
 
 print_machine_code_store_address_mode_as_text: .proc
-three_bytes_tokens: .text "*~:!/"
-three_bytes_tokens_end:
         phx
-        lda scratch         ; load address mode
+        lda (scratch)         ; load address mode
         ldx #<three_bytes_tokens_end-three_bytes_tokens+1
-next_token:
+next_three_bytes_token:
         dex
         cpx #$ff
         beq two_bytes
         cmp three_bytes_tokens,x
-        bne next_token
-three_bytes:
+        bne next_three_bytes_token
         jmp print_three_bytes
-
-two_byte_token: .null "#$%^&()="
-two_byte_token_end:
 
 two_bytes:
         ldx #<two_byte_token_end-two_byte_token+1
-check_two_byte_token:
+next_two_bytes_token:
         dex
-        cpx #$ff
-        beq one_byte
+        bmi one_byte
         cmp two_byte_token,x
-        beq print
-        inx
-        cpx #8
-        bne check_two_byte_token
-        bra one_byte
-print:
+        bne next_two_bytes_token
         jmp print_two_bytes
+
 one_byte:
         jmp print_one_byte
         .pend
 
 ; WIP
 print_three_bytes: .proc
+        jsr b_space
+        lda (address)
+        sta temp1
+        jsr b_hex_byte
+        jsr b_space
+        jsr inc_address
+        lda (address)
+        sta temp1
+        jsr b_hex_byte
+        jsr b_space
+        jsr inc_address
+        lda (address)
+        sta temp1
+        jsr b_hex_byte
         jsr inc_scratch
+        jsr b_space
+        plx
         rts
         .pend
 
@@ -140,6 +145,7 @@ print_two_bytes: .proc
         lda (address)
         sta temp1
         jsr b_hex_byte
+        jsr b_space
         jsr inc_address
         lda (address)
         sta temp1
@@ -147,8 +153,6 @@ print_two_bytes: .proc
         jsr inc_address
         jsr inc_scratch
         jsr b_space4
-        jsr b_space2
-        jsr b_space
         plx
         rts
         .pend

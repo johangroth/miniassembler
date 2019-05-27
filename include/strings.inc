@@ -66,18 +66,36 @@ print_text_rts: .macro
         .endm
 
 print_a:    .macro
+        pha
+        phx
+        phy
         sta temp1
         jsr b_hex_byte
+        ply
+        plx
+        pla
         .endm
 
 print_x:    .macro
+        pha
+        phx
+        phy
         stx temp1
         jsr b_hex_byte
+        ply
+        plx
+        pla
         .endm
 
 print_y:    .macro
+        pha
+        phx
+        phy
         sty temp1
         jsr b_hex_byte
+        ply
+        plx
+        pla
         .endm
 
 print_char: .macro

@@ -284,3 +284,9 @@ mnemonics:
 .text  '$bbs'
 
 mnemonics_end:
+
+three_bytes_tokens: .text "*~:!/"
+three_bytes_tokens_end:
+
+two_byte_token: .null "#$%^&()="
+two_byte_token_end:

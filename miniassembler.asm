@@ -99,8 +99,7 @@ print_machine_code_store_address_mode_as_text: .proc
         ldx #<three_bytes_tokens_end-three_bytes_tokens+1
 next_three_bytes_token:
         dex
-        cpx #$ff
-        beq two_bytes
+        bmi two_bytes
         cmp three_bytes_tokens,x
         bne next_three_bytes_token
         jmp print_three_bytes

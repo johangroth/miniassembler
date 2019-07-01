@@ -290,3 +290,7 @@ three_bytes_tokens_end:
 
 two_byte_token: .null "#$%^&()="
 two_byte_token_end:
+
+address_mode = $eb
+addressing_mode_low = address_mode + $1;
+addressing_mode_high = address_low + $1;

@@ -53,10 +53,10 @@ error: .null "error"
 
 ;;;
 ;; print mnemonics
-;; returns address mode in .A
 ;;;
 print_mnemonic .proc
         jsr print_machine_code_store_address_mode_as_text
+        jsr inc_scratch
         ldy #0
 again:
         lda (scratch),y
@@ -72,7 +72,8 @@ again:
         lda #>input_buffer
         sta index_high
         jsr b_prout
-        jsr address_mode
+        jsr b_space
+        jsr print_address_mode
 next:
         rts
         .pend
@@ -96,7 +97,8 @@ next:
 print_machine_code_store_address_mode_as_text: .proc
         phx
         lda (scratch)         ; load address mode
-        ldx #<three_bytes_tokens_end-three_bytes_tokens+1
+        sta address_mode
+        ldx #<three_bytes_tokens_end-three_bytes_tokens-1
 next_three_bytes_token:
         dex
         bmi two_bytes
@@ -105,7 +107,7 @@ next_three_bytes_token:
         jmp print_three_bytes
 
 two_bytes:
-        ldx #<two_byte_token_end-two_byte_token+1
+        ldx #<two_byte_token_end-two_byte_token-1
 next_two_bytes_token:
         dex
         bmi one_byte
@@ -126,14 +128,16 @@ print_three_bytes: .proc
         jsr b_space
         jsr inc_address
         lda (address)
+        sta addressing_mode_low
         sta temp1
         jsr b_hex_byte
         jsr b_space
         jsr inc_address
         lda (address)
+        sta addressing_mode_high
         sta temp1
         jsr b_hex_byte
-        jsr inc_scratch
+        jsr inc_address
         jsr b_space
         plx
         rts
@@ -147,23 +151,23 @@ print_two_bytes: .proc
         jsr b_space
         jsr inc_address
         lda (address)
+        sta addressing_mode_low
         sta temp1
         jsr b_hex_byte
         jsr inc_address
-        jsr inc_scratch
         jsr b_space4
         plx
         rts
         .pend
 
-debug_me: .text "should happen"
+debug_me_true: .text "should happen"
+debug_me_false: .text "should not happen"
 
 print_one_byte: .proc
         jsr b_space
         lda (address)
         sta temp1
         jsr b_hex_byte
-        jsr inc_scratch
         jsr inc_address
         jsr b_space4
         jsr b_space2
@@ -181,7 +185,19 @@ return:
         .pend
 
 
-address_mode: .proc
-
+print_address_mode: .proc
+        lda address_mode
+        cmp #'@'
+        beq exit
+        cmp #'#'
+        bne next_address_mode;
+        lda #'#'
+        jsr b_chout
+        jsr b_dollar
+        lda addressing_mode_low
+        sta temp1
+        jsr b_hex_byte
+next_address_mode:
+exit:
         rts
         .pend

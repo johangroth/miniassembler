@@ -58,9 +58,9 @@ disassemble: .proc
         lda temp1                   ;if temp1 is zero
         beq continue_list           ;branch as we want to continue where we left off
         lda number_buffer           ;Address ends up in number_buffer
-        sta address_low             ;so store it in address
+        sta pc_low             ;so store it in address
         lda number_buffer+1
-        sta address_high
+        sta pc_high
 continue_list:
         jsr disass
         rts

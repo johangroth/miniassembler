@@ -4,8 +4,12 @@
         .include "include/miniassembler.inc"
 disass: .proc
         ldx #20                     ; disassemble 20 lines
+        lda pc_low
+        sta address_low
+        lda pc_high
+        sta address_high
         jsr b_hex_address           ; print current address
-        lda (address)
+        lda (pc)
         sta y_register              ; op-code in .Y
         sta temp1
         tay
@@ -71,7 +75,7 @@ again:
         sta index_low
         lda #>input_buffer
         sta index_high
-        jsr b_prout
+        jsr b_prout                     ; print mnemonic
         jsr b_space
         jsr print_address_mode
 next:
@@ -122,22 +126,22 @@ one_byte:
 ; WIP
 print_three_bytes: .proc
         jsr b_space
-        lda (address)
+        lda (pc)
         sta temp1
         jsr b_hex_byte
         jsr b_space
-        jsr inc_address
-        lda (address)
+        jsr inc_pc
+        lda (pc)
         sta addressing_mode_low
         sta temp1
         jsr b_hex_byte
         jsr b_space
-        jsr inc_address
-        lda (address)
+        jsr inc_pc
+        lda (pc)
         sta addressing_mode_high
         sta temp1
         jsr b_hex_byte
-        jsr inc_address
+        jsr inc_pc
         jsr b_space
         plx
         rts
@@ -145,16 +149,16 @@ print_three_bytes: .proc
 
 print_two_bytes: .proc
         jsr b_space
-        lda (address)
+        lda (pc)
         sta temp1
         jsr b_hex_byte
         jsr b_space
-        jsr inc_address
-        lda (address)
+        jsr inc_pc
+        lda (pc)
         sta addressing_mode_low
         sta temp1
         jsr b_hex_byte
-        jsr inc_address
+        jsr inc_pc
         jsr b_space4
         plx
         rts
@@ -165,10 +169,10 @@ debug_me_false: .text "should not happen"
 
 print_one_byte: .proc
         jsr b_space
-        lda (address)
+        lda (pc)
         sta temp1
         jsr b_hex_byte
-        jsr inc_address
+        jsr inc_pc
         jsr b_space4
         jsr b_space2
         jsr b_space
@@ -176,19 +180,12 @@ print_one_byte: .proc
         rts
         .pend
 
-inc_scratch: .proc
-        inc scratch_low
-        bne return
-        inc scratch_high
-return:
-        rts
-        .pend
-
-
 print_address_mode: .proc
         lda address_mode
         cmp #'@'                ; Implied i, Stack s, Accumulator A
-        beq exit
+        bne check_immediate
+        rts
+check_immediate:
         cmp #'#'                ; Immediate #
         bne check_absolute
         lda #'#'
@@ -205,14 +202,14 @@ check_absolute:
 ;;;
         jsr b_dollar
         lda addressing_mode_low
-        sta index_low
+        sta address_low
         lda addressing_mode_high
-        sta index_high
+        sta address_high
         jmp b_hex_address
 
 check_aii:
         cmp #'~'
-        bne check_aix
+        bne check_aix               ; absolute indexed with x a,x
 ;;;
 ;; handle absolute indexed indirect
 ;;;
@@ -220,36 +217,126 @@ check_aii:
 check_aix:
         cmp #':'
         bne check_aiy             ; absolute indexed with y a,y
+
+;;;
+;; handle absolute indexed with x a,x
+;;;
+        rts
 check_aiy:
         cmp #'!'
         bne check_ai              ; absolute indirect (a)
+
+;;;
+;; handle absolute indexed with y a,y
+;;;
+        rts
 check_ai:
         cmp #'/'
         bne check_pc_relative     ; all branch op codes
+
+;;;
+;; handle absolute indirect (a)
+;;;
+        rts
 check_pc_relative:
         cmp #'$'
-        bne check_zero_page
+        bne check_zero_page         ; zero page
+
+;;;
+;; handle all branch op codes
+;;;
+        jsr b_dollar
+        lda addressing_mode_low
+        bmi negative_address
+        clc
+        adc pc_low
+        sta address_low
+        lda pc_high
+        adc #0                      ; add possible carry
+        sta address_high
+        bra address_out             ; print the address
+negative_address:
+        eor #$ff                    ; find two-compliment
+        ina
+        sta temp1
+        sec
+        lda pc_low
+        sbc temp1
+        sta address_low
+        lda pc_high
+        sbc #0
+        sta address_high
+address_out:
+        jmp b_hex_address
+
 check_zero_page:
         cmp #'%'
         bne check_zp_ii           ; zero page indexed indirect (zp,x)
+
+;;;
+;; handle zero page
+;;;
+        rts
+
 check_zp_ii:
         cmp #'^'
         bne check_zp_ix           ; zero page indexed with x zp,x
+;;;
+;; handle zero page indexed indirect (zp,x)
+;;;
+        rts
+
 check_zp_ix:
         cmp #'&'
         bne check_zp_iy           ; zero page indexed with y zp,y
+;;;
+;; handle zero page indexed with x zp,x
+;;;
+        rts
+
 check_zp_iy:
         cmp #'('
         bne check_zp_i            ; zero page indirect (zp)
+;;;
+;; handle zero page indexed with y zp,y
+;;;
+        rts
+
 check_zp_i:
         cmp #')'
         bne check_zp_iiy          ; zero page indirect indexced with y (zp),y
+;;;
+;; handle zero page indirect (zp)
+;;;
+        rts
+
 check_zp_iiy:
         cmp #'='
         bne check_not_implemented ; unknown op code
+;;;
+;; handle zero page indirect indexced with y (zp),y
+;;;
+        rts
+
 check_not_implemented:
         cmp #'|'
         bne exit
 exit:
+        rts
+        .pend
+
+inc_scratch: .proc
+        inc scratch_low
+        bne return
+        inc scratch_high
+return:
+        rts
+        .pend
+
+inc_pc: .proc
+        inc pc_low
+        bne done
+        inc pc_high
+done:
         rts
         .pend

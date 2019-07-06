@@ -10,6 +10,7 @@
         stack_pointer           = zp_start + $6
         pc_low                  = zp_start + $7
         pc_high                 = zp_start + $8
+        pc                      = pc_low
 
         ; 65C51 IRQ handler buffer pointers and counters
         in_buffer_counter   = zp_start + $9     ; Keeps track of how many characters there are in the input buffer

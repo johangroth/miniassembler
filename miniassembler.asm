@@ -199,17 +199,31 @@ print_address_mode: .proc
         jmp b_hex_byte
 check_absolute:
         cmp #'*'
-        bne check_isa             ; implied i, stack s, accumulator a
-check_isa:
-        cmp #'@'
-        bne check_aix             ; absolute indexed wth x a,x
+        bne check_aii             ; absolute indexed indirect
+;;;
+;; handle absolute a
+;;;
+        jsr b_dollar
+        lda addressing_mode_low
+        sta index_low
+        lda addressing_mode_high
+        sta index_high
+        jmp b_hex_address
+
+check_aii:
+        cmp #'~'
+        bne check_aix
+;;;
+;; handle absolute indexed indirect
+;;;
+        rts
 check_aix:
         cmp #':'
         bne check_aiy             ; absolute indexed with y a,y
 check_aiy:
         cmp #'!'
-        bne check_aii             ; absolute indirect (a)
-check_aii:
+        bne check_ai              ; absolute indirect (a)
+check_ai:
         cmp #'/'
         bne check_pc_relative     ; all branch op codes
 check_pc_relative:

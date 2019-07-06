@@ -187,17 +187,55 @@ return:
 
 print_address_mode: .proc
         lda address_mode
-        cmp #'@'
+        cmp #'@'                ; Implied i, Stack s, Accumulator A
         beq exit
-        cmp #'#'
-        bne next_address_mode;
+        cmp #'#'                ; Immediate #
+        bne check_absolute
         lda #'#'
         jsr b_chout
         jsr b_dollar
         lda addressing_mode_low
         sta temp1
-        jsr b_hex_byte
-next_address_mode:
+        jmp b_hex_byte
+check_absolute:
+        cmp #'*'
+        bne check_isa             ; implied i, stack s, accumulator a
+check_isa:
+        cmp #'@'
+        bne check_aix             ; absolute indexed wth x a,x
+check_aix:
+        cmp #':'
+        bne check_aiy             ; absolute indexed with y a,y
+check_aiy:
+        cmp #'!'
+        bne check_aii             ; absolute indirect (a)
+check_aii:
+        cmp #'/'
+        bne check_pc_relative     ; all branch op codes
+check_pc_relative:
+        cmp #'$'
+        bne check_zero_page
+check_zero_page:
+        cmp #'%'
+        bne check_zp_ii           ; zero page indexed indirect (zp,x)
+check_zp_ii:
+        cmp #'^'
+        bne check_zp_ix           ; zero page indexed with x zp,x
+check_zp_ix:
+        cmp #'&'
+        bne check_zp_iy           ; zero page indexed with y zp,y
+check_zp_iy:
+        cmp #'('
+        bne check_zp_i            ; zero page indirect (zp)
+check_zp_i:
+        cmp #')'
+        bne check_zp_iiy          ; zero page indirect indexced with y (zp),y
+check_zp_iiy:
+        cmp #'='
+        bne check_not_implemented ; unknown op code
+check_not_implemented:
+        cmp #'|'
+        bne exit
 exit:
         rts
         .pend

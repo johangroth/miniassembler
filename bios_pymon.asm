@@ -1,5 +1,4 @@
-        * = $8000
-        .cpu "w65c02"
+
         .include "include/bios.inc"
         .include "include/zp.inc"
         .include "include/strings.inc"
@@ -444,9 +443,9 @@ exit:
 ;;
 ;;      Example:
 ;;                  lda #$fc
-;;                  sta index_low
+;;                  sta address_low
 ;;                  lda #$ab
-;;                  sta index_high
+;;                  sta address_high
 ;;                  jsr hex_address
 ;;
 ;;      Terminal will show:
